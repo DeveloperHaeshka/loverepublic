@@ -1,5 +1,7 @@
+from settings import VIP_OPTIONS
 from app.database.models import Sponsor
 
+from anypay import Bill
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
@@ -33,107 +35,104 @@ def subscription(sponsors: list[Sponsor]) -> InlineKeyboardMarkup:
     )
 
 
-def invite(username: str, user_id: int) -> InlineKeyboardMarkup:
+def bill(bill: Bill, item_id: str) -> InlineKeyboardMarkup:
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text='Поделиться',
-                    url='https://t.me/share/url?url=https://t.me/%s?start=%i&text=То%%20самое%%20API%%20для%%20раздевания%%20девушек%%20☝️' % (
-                        username,
-                        user_id,
-                    ),
+                    text='Оплатить 🔗',
+                    url=bill.url,
                 ),
             ],
-        ],
-    )
-
-
-def bill(url: str) -> InlineKeyboardMarkup:
-
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text='Оплатить 🟢',
-                    url=url,
+                    text='Проверить ✅',
+                    callback_data='check:%i:%s' % (
+                        bill.id, item_id,
+                    ),
                 ),
             ],
             [
                 InlineKeyboardButton(
                     text='Назад 🔙',
-                    callback_data='prices',
+                    callback_data='back:vip',
                 ),
             ],
-        ],
+        ]
     )
 
+BUY = InlineKeyboardMarkup(
+    inline_keyboard=[
+        *(
+            [
+                InlineKeyboardButton(
+                    text=item['name'],
+                    callback_data='buy:%s' % key,
+                ),
+            ] for key, item in VIP_OPTIONS.items()
+        ),
+        [
+            InlineKeyboardButton(
+                text='Получить бесплатно 🤫',
+                callback_data='ref',
+            ),
+        ],
+    ],
+)
+
+ADULT_GENDER = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text='Муж. ♂️',
+                callback_data='adult:male',
+            ),
+            InlineKeyboardButton(
+                text='Жен. ♀️',
+                callback_data='adult:female',
+            ),
+        ]
+    ],
+)
+
+BACK_VIP = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text='Назад 🔙',
+                callback_data='back:vip',
+            ),
+        ],
+    ],
+)
 
 PROFILE = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(
-                text='Пополнить баланс',
-                callback_data='prices',
+                text='Изменить пол👩‍❤️‍👨',
+                callback_data='edit:gender',
             ),
         ],
         [
             InlineKeyboardButton(
-                text='Сбросить ключ',
-                callback_data='reset',
-            ),
-        ],
-    ],
-)
-
-PRICES = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text='100р',
-                callback_data='buy:100',
-            ),
-            InlineKeyboardButton(
-                text='250р',
-                callback_data='buy:250',
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text='500р',
-                callback_data='buy:500',
-            ),
-            InlineKeyboardButton(
-                text='1000р',
-                callback_data='buy:1000',
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text='Своя сумма',
-                callback_data='buy:custom',
+                text='Изменить возраст📝',
+                callback_data='edit:age',
             ),
         ],
     ],
 )
-PRICES_BACK = InlineKeyboardMarkup(
+GENDER = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(
-                text='Назад 🔙',
-                callback_data='prices',
+                text='Парень🙋‍♂',
+                callback_data='gender:1',
             ),
-        ],
-    ],
-)
-
-CANCEL = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [
             InlineKeyboardButton(
-                text='Назад 🔙',
-                callback_data='cancel',
+                text='Девушка🙎‍♀',
+                callback_data='gender:0',
             ),
         ],
     ],

@@ -54,7 +54,7 @@ class SubMiddleware(BaseMiddleware):
         state_data = await state.get_data()
         time_to_check: bool = state_data.get('lask_check', 0) < (time.time() - 60)
 
-        if not time_to_check or chat.type != 'private':
+        if not time_to_check or chat.type != 'private' or getattr(user, 'is_vip', False):
 
             return await handler(event, data)
 

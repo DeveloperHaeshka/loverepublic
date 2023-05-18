@@ -55,7 +55,7 @@ async def payment_stats(message: types.Message, session: AsyncSession):
 
     statements = [
             select(func.sum(Bill.amount))
-            .where(Bill.created_at >= date)
+            .where(Bill.date >= date)
             for date in get_times()
     ]
     results = [
@@ -75,12 +75,12 @@ async def payment_stats(message: types.Message, session: AsyncSession):
             caption=texts.admin.MONEY % tuple(results),
         )
     )
-
+    
 
 def register(router: Router):
 
     router.message.register(user_stats, Text("Статистика"))
     router.message.register(user_stats, Command("stats"))
 
-    router.message.register(payment_stats, Text("Прибыль"))
+    router.message.register(payment_stats, Text('Прибыль'))
     router.message.register(payment_stats, Command("money"))

@@ -55,6 +55,7 @@ async def mailing_confirm(message: types.Message, bot: Bot, state: FSMContext, s
             select(User.id)
             .where(User.block_date == None)
             .where(User.chat_only == False)
+            .where(User.vip_time < datetime.now())
         )).all()
 
         await message.answer(
@@ -64,11 +65,9 @@ async def mailing_confirm(message: types.Message, bot: Bot, state: FSMContext, s
 
         mailer = MailerSingleton.get_instance()
         asyncio.create_task(mailer.start_mailing(
-            bot,
-            data['message_id'], 
-            message.chat.id,
-            data['reply_markup'], 
-            scope,
+            data['message_id'], data['reply_markup'], 
+            message.chat.id, bot, scope,
+            cancel_keyboard=nav.inline.STOPMAIL,
         ))
 
     else:
@@ -83,7 +82,7 @@ async def stop_mailing(call: types.CallbackQuery):
     MailerSingleton.get_instance().stop_mailing()
     
     await call.message.delete()
-    await call.answer("Рассылка остановлена. Статистика рассылки придет в течении минуты.")
+    await call.answer("Рассылка остановлена.")
 
 
 async def cancel_mailing(call: types.CallbackQuery, state: FSMContext):

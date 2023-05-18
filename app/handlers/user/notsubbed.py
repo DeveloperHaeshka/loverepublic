@@ -46,8 +46,8 @@ async def subbed(call: types.CallbackQuery, session: AsyncSession, user: User, b
 
     await call.message.delete()
     await call.message.answer(
-        texts.user.START % bot_info.username,
-        reply_markup=nav.reply.MENU,
+        texts.user.START,
+        reply_markup=nav.reply.main_menu(user),
     )
 
     if user.subbed_before and user.subbed:

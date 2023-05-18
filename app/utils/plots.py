@@ -193,8 +193,8 @@ class PaymentPlot(BasePlotCreator):
         return await session.scalar(
             select(func.sum(Bill.amount))
             .where(
-                Bill.created_at >= date,
-                Bill.created_at < date + timedelta(1),
+                Bill.date >= date,
+                Bill.date < date + timedelta(1),
             )
         ) or 0
 

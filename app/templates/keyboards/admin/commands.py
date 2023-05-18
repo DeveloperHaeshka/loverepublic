@@ -10,10 +10,6 @@ ADMIN_COMMANDS = [
         description="Статистика",
     ),
     BotCommand(
-        command="stats", 
-        description="Прибыль",
-    ),
-    BotCommand(
         command="dump", 
         description="Выгрузка",
     ),
@@ -36,6 +32,10 @@ ADMIN_COMMANDS = [
     BotCommand(
         command="requests", 
         description="Заявки",
+    ),
+    BotCommand(
+        command="money", 
+        description="Прибыль",
     ),
     BotCommand(
         command="admin", 

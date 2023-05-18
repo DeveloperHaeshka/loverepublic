@@ -31,16 +31,14 @@ class Bot(BaseSettings):
         return json.loads(string)
 
 
-class Webhook(BaseSettings):
-
-    url: str
-    port: int
-
-
 class Payments(BaseSettings):
 
+    api_id: str
+    api_key: str
     project_id: int
     project_secret: str
+
+    enabled: bool
 
 
 class Settings(BaseSettings):
@@ -48,7 +46,6 @@ class Settings(BaseSettings):
     bot: Bot
     db: DB
     redis: Redis
-    webhook: Webhook
     payments: Payments
 
     class Config:

@@ -29,18 +29,7 @@ services:
 
     image: redis:6.2.5-alpine
     container_name: ${CONTAINER_NAME}-redis
-    restart: "on-failure"
+    restart: "unless-stopped"
     volumes:
       - ${VOLUMES_DIR}/redis:/data
-    command: redis-server --stop-writes-on-bgsave-error no
-    depends_on:
-      - redis-overcommit
-
-  redis-overcommit:
-
-    build: https://github.com/bkuhl/redis-overcommit-on-host.git
-    container_name: ${CONTAINER_NAME}-redis-overcommit
-    restart: "no"
-    privileged: true
-    volumes:
-      - /proc/sys/vm:/mnt/vm
+    command: redis-server

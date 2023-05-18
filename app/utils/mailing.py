@@ -1,8 +1,6 @@
 import time
 import asyncio
 
-from app.templates.keyboards import admin as nav
-
 from typing import Optional
 from contextlib import suppress
 
@@ -12,14 +10,11 @@ from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
 
 class MailerSingleton(object):
 
-    SPEED = 25
-
-    __tasks: list[asyncio.Future] = []
-    __semaphore = asyncio.Semaphore(SPEED)
+    DEFAULT_DELAY = 1/25
     __instance = None
 
 
-    def __init__(self) -> None:
+    def __init__(self, delay: int | float=None) -> None:
         """
         Creator of MailerSingleton. Raises an exception if an instance already exists.
 
@@ -31,6 +26,7 @@ class MailerSingleton(object):
 
             raise Exception('MailingSingleton is a singleton!')
 
+        self.delay = delay or self.DEFAULT_DELAY
         MailerSingleton.__instance = self
 
 
@@ -67,113 +63,113 @@ class MailerSingleton(object):
         )
 
 
-    def get_text(self) -> str:
+    @classmethod
+    def get_text(cls, scope: list[int], sent: int, delay: float) -> str:
         """
         Get an ETA message.
 
+        :param list[int] scope: Scope of users.
+        :param int sent: Progress of mailing.
+        :param float delay: Delay between messages.
         :return str: Ready message.
         """
 
-        progress = int((self.progress or 1) / self.length * 25)
+        progress = int(sent / len(scope) * 25)
         progress_bar = ('=' * progress) + (' ' * (25 - progress))
 
-        return "<code>[%s]</> %s/%s (ETA: %s)" % (
+        return "<code>[%s]</code> %s/%s (ETA: %s)" % (
             progress_bar,
-            self.progress,
-            self.length,
-            self.pretty_time((self.length - self.progress) / self.SPEED)
+            sent,
+            len(scope),
+            cls.pretty_time((len(scope) - sent) * delay)
         )
 
 
     async def start_mailing(
         self, 
-        bot: Bot, 
         message_id: int, 
-        chat_id: int, 
         reply_markup: Optional[dict], 
+        chat_id: int, 
+        bot: Bot, 
         scope: list[int], 
+        cancel_keyboard: dict
     ):
         """
         Start mailing.
 
-        :param Bot bot: An instance of Bot.
         :param int message_id: Target message ID.
-        :param int chat_id: Target chat ID.
         :param Optional[dict] reply_markup: Target message reply markup.
+        :param int chat_id: Target chat ID.
+        :param Bot bot: An instance of Bot.
         :param list[int] scope: Users to send to.
+        :param dict cancel_keyboard: Cancel keyboard.
         """
 
-        self.stop_mailing()
-        
-        self.last_update = time.monotonic()
-        
-        self.blocked = 0
-        self.progress = 0
-        self.length = len(scope)
+        self.TIME_STARTED = time.monotonic()
 
-        self.bot = bot
-        self.message_id = message_id
-        self.chat_id = chat_id
-        self.reply_markup = reply_markup
+        time_started = self.TIME_STARTED
+        blocked = 0
+        delay = self.delay
 
-        self.admin_message = await bot.send_message(
+        message = await bot.send_message(
             chat_id,
-            self.get_text(),
-            reply_markup=nav.inline.STOPMAIL,
+            self.get_text(scope, 1, delay),
+            reply_markup=cancel_keyboard,
         )
+        self.last_update = time.monotonic()
 
-        await asyncio.gather(
-            *(
-                self._mail(user_id)
-                for user_id in scope
-            )
-        )
+        for sent, user_id in enumerate(scope, 1):
 
-        with suppress(TelegramAPIError):
-            
-            await self.admin_message.edit_text(self.get_text())
+            if self.TIME_STARTED != time_started:
 
-        await self.admin_message.answer(
-            'Рассылка завершена. Успешно: %s. Бот заблокирован: %s' % (
-                (len(scope) - self.blocked), self.blocked,
-            ),
-        )
+                break
 
+            if time.monotonic() - self.last_update > 2:
 
-    async def _mail(self, user_id: int) -> None:
-
-        async with self.__semaphore:
-
-            if self.last_update + 5 < time.time():
-
-                self.last_update = time.time()
+                self.last_update = time.monotonic()
 
                 with suppress(TelegramAPIError):
                     
-                    await self.admin_message.edit_text(self.get_text())
+                    await message.edit_text(
+                        self.get_text(
+                            scope, sent, delay,
+                        ),
+                        reply_markup=cancel_keyboard,
+                    )
 
-            start_time = time.perf_counter()
-            self.progress += 1
-            
             try:
 
-                await self.bot.copy_message(
-                    message_id=self.message_id,
-                    from_chat_id=self.chat_id,
+                await bot.copy_message(
                     chat_id=user_id,
-                    reply_markup=self.reply_markup,
+                    from_chat_id=chat_id,
+                    message_id=message_id,
+                    reply_markup=reply_markup,
                 )
 
             except TelegramRetryAfter as exc:
 
+                delay *= 2
                 await asyncio.sleep(exc.retry_after)
 
             except TelegramAPIError:
 
-                self.blocked += 1
+                blocked += 1
 
-            sleep_time = 1 - (start_time - time.perf_counter()) / 10 ** 9
-            await asyncio.sleep(max(sleep_time, 0))
+            await asyncio.sleep(delay)
+
+        with suppress(TelegramAPIError):
+
+            await message.edit_text(
+                self.get_text(
+                    scope, len(scope), delay,
+                ),
+            )
+
+        await message.answer(
+            'Рассылка завершена. Успешно: %s. Бот заблокирован: %s' % (
+                (len(scope) - blocked), blocked,
+            ),
+        )
 
 
     def stop_mailing(self) -> bool:
@@ -182,12 +178,12 @@ class MailerSingleton(object):
 
         :return bool: True on successful stop.
         """
-        
-        for task in self.__tasks:
-            
-            task.cancel()
 
-        self.__tasks.clear()
+        if self.TIME_STARTED == 0:
+
+            return False
+
+        self.TIME_STARTED = 0
 
         return True
 
@@ -200,4 +196,4 @@ class MailerSingleton(object):
         :return bool: True if mailing is in progress.
         """
 
-        return bool(self.__tasks)
+        return self.TIME_STARTED != 0

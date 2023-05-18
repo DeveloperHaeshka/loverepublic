@@ -1,2 +1,2 @@
-from .engine import create_engine, create_tables
+from .engine import create_sessionmaker
 

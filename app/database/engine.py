@@ -4,7 +4,11 @@ from app.utils.config import DB
 from app.database.models import Base
 
 from sqlalchemy.engine import URL
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine, 
+    create_async_engine, 
+    async_sessionmaker,
+)
 
 
 log = logging.getLogger('database.engine')
@@ -13,9 +17,9 @@ async def create_tables(engine: AsyncEngine) -> None:
     """
     Create tables from models. 
 
-    :param AsyncSession session: Async Sess
+    :param AsyncEngine engine: Async engine
     """
-    
+
     async with engine.begin() as conn:
             
         await conn.run_sync(Base.metadata.create_all)
@@ -23,12 +27,13 @@ async def create_tables(engine: AsyncEngine) -> None:
         log.info('Tables created successfully')
 
 
-def create_engine(database: DB) -> AsyncEngine:
+async def create_sessionmaker(database: DB) -> async_sessionmaker:
     """
-    Create an async engine for the database.
+    Create an async sessionmaker for the database and create tables if they don't exist.
 
-    :param DB database: Postgres database credentials
-    :return AsyncEngine: Async Engine 
+    :param str database: Postgres database credentials
+    :param bool debug: Debug mode, defaults to False
+    :return async_sessionmaker: Async sessionmaker (sessionmaker with AsyncSession class)
     """
 
     engine = create_async_engine(
@@ -44,4 +49,5 @@ def create_engine(database: DB) -> AsyncEngine:
     )
     log.info('Connected to database')
     
-    return engine
+    await create_tables(engine)
+    return async_sessionmaker(engine, expire_on_commit=False)

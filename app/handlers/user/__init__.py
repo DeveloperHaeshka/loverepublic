@@ -2,7 +2,9 @@ from . import (
     start,
     notsubbed,
     events,
+    vip, 
     profile,
+    dialogue,
 )
 from aiogram import Router, Dispatcher
 
@@ -16,9 +18,12 @@ def setup(dp: Dispatcher, router: Router):
     """
     
     events.register(dp)
+    
     start.register(router)
+    vip.register(router)
 
     # all handlers afther `notsubbed` will work after user subscribed.
     notsubbed.register(router)
 
     profile.register(router)
+    dialogue.register(router)

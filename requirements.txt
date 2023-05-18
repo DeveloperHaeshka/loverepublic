@@ -1,8 +1,8 @@
 aiogram           ~= 3.0.0b7
 asyncpg           ~= 0.27.0
+anypay            >= 1.1.2
 matplotlib        ~= 3.7.0
 pydantic[dotenv]  ~= 1.10.7
-psutil            ~= 5.9.4
 redis             ~= 4.5.4
 sqlalchemy        >= 2.0.0
 validators        ~= 0.20.0

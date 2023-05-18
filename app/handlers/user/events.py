@@ -106,11 +106,11 @@ async def safe_approve(bot: Bot, request: Request, session: AsyncSession):
     )
 
 
-async def captcha(message: types.Message, bot: Bot, session: AsyncSession):
+async def captcha(message: types.Message, bot: Bot, session: AsyncSession, user: User):
 
     await message.answer(
         'Ваша заявка принята ✅',
-        reply_markup=nav.reply.MENU,
+        reply_markup=nav.reply.main_menu(user),
     )
 
     requests = await session.scalars(

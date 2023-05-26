@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 async def get_users(call: types.CallbackQuery, session: AsyncSession, select_alive: bool=False):
 
-    stmt = select(User.id)
+    stmt = select(User.id).where(User.chat_only == False)
     
     if select_alive:
 

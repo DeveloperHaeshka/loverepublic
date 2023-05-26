@@ -15,17 +15,17 @@ async def user_stats(message: types.Message, session: AsyncSession):
     statements = (
         select(func.count(User.id)).where(User.chat_only == False, User.id > 0),
         select(func.count(User.id)).where(User.block_date == None, User.chat_only == False),
-        select(func.count(User.id)).where(User.block_date != None),
-        select(func.count(User.id)).where(User.subbed == True),
+        select(func.count(User.id)).where(User.block_date != None, User.chat_only == False),
+        select(func.count(User.id)).where(User.subbed == True, User.chat_only == False),
         select(func.count(User.id)).where(User.id < 0),
         *(
             select(func.count(User.id))
-            .where(User.join_date >= date)
+            .where(User.join_date >= date, User.chat_only == False)
             for date in get_times()
         ),
         *(
             select(func.count(User.id))
-            .where(User.join_date >= date)
+            .where(User.join_date >= date, User.chat_only == False)
             .where(User.ref == None)
             for date in get_times()
         ),
